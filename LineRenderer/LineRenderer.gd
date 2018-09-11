@@ -50,7 +50,7 @@ func _process(delta):
 		
 		if i == 0:
 			if drawCaps:
-				cap(A, B, thickness, capSmooth)
+				corner(A, B, thickness, capSmooth)
 		
 		if scaleTexture:
 			var ABLen = AB.length()
@@ -85,22 +85,10 @@ func _process(delta):
 		
 		if i == points.size() - 2:
 			if drawCaps:
-				cap(B, A, nextThickness, capSmooth)
+				corner(B, A, nextThickness, capSmooth)
 		else:
 			if drawCorners:
-				var C = points[i+2]
-				if globalCoords:
-					C = to_local(C)
-				
-				var BC = C - B;
-				var orthogonalBCStart = (to_local(camera.get_global_transform().origin) - ((B + C) / 2)).cross(BC).normalized() * nextThickness;
-				
-				var angleDot = AB.dot(orthogonalBCStart)
-				
-				if angleDot > 0:
-					corner(B, BtoABEnd, B + orthogonalBCStart, cornerSmooth)
-				else:
-					corner(B, B - orthogonalBCStart, BfromABEnd, cornerSmooth)
+				corner(B, A, nextThickness, cornerSmooth)
 		
 		progress += progressStep;
 		thickness = lerp(startThickness, endThickness, progress);
@@ -108,7 +96,7 @@ func _process(delta):
 	
 	end()
 
-func cap(center, pivot, thickness, smoothing):
+func corner(center, pivot, thickness, smoothing):
 	var orthogonal = (to_local(camera.get_global_transform().origin) - center).cross(center - pivot).normalized() * thickness;
 	var axis = (center - to_local(camera.get_global_transform().origin)).normalized();
 	
@@ -120,30 +108,6 @@ func cap(center, pivot, thickness, smoothing):
 	
 	for i in range(1, smoothing):
 		array[i] = center + (orthogonal.rotated(axis, lerp(0, PI, float(i) / smoothing)));
-	
-	for i in range(1, smoothing + 1):
-		var currSmooth = (i - 1) / smoothing
-		
-		set_uv(Vector2(0, currSmooth))
-		add_vertex(array[i - 1]);
-		set_uv(Vector2(0, currSmooth))
-		add_vertex(array[i]);
-		set_uv(Vector2(0.5, 0.5))
-		add_vertex(center);
-		
-func corner(center, start, end, smoothing):
-	var array = []
-	for i in range(smoothing + 1):
-		array.append(Vector3(0,0,0))
-	array[0] = start;
-	array[smoothing] = end;
-	
-	var axis = start.cross(end).normalized()
-	var offset = start - center
-	var angle = offset.angle_to(end - center)
-	
-	for i in range(1, smoothing):
-		array[i] = center + offset.rotated(axis, lerp(0, angle, float(i) / smoothing));
 	
 	for i in range(1, smoothing + 1):
 		var currSmooth = (i - 1) / smoothing
