@@ -14,7 +14,7 @@ To edit the line's points, simply edit the `points` member variable of the line 
 - **Corner smooth/cap smooth**: how much smoothing to apply to the line's corners/caps. Generally, values around 5 work well. A value of 2 results in pointed corners/caps.
 - **Draw caps/corners**: Enables/disables drawing caps or corners separately.
 - **Global coords**: If enabled, the line's points are assumed to be global coordinates, which are independent of the line's transform or its parent. To have the line move/rotate with either itself or its parent, uncheck this so that the points are local.
-- **Scale texture**: Checking this box titles the texture, automatically repeating in the line's axial direction. Unchecking this box stretches the texture instead along the line's segments.
+- **Scale texture**: Checking this box tiles the texture, automatically repeating in the line's axial direction. Unchecking this box stretches the texture instead along the line's segments.
 
 ## Limitations
 - Since this effectively uses camera-facing billboards, as with most billboards, certain angles can break the illusion of cylindrical volume.
