@@ -11,6 +11,7 @@ export var globalCoords = true
 export var scaleTexture = true
 
 var camera
+var cameraOrigin
 
 func _ready():
 	pass
@@ -22,6 +23,7 @@ func _process(delta):
 	camera = get_viewport().get_camera()
 	if camera == null:
 		return
+	cameraOrigin = to_local(camera.get_global_transform().origin)
 	
 	var progressStep = 1.0 / points.size();
 	var progress = 0;
@@ -40,8 +42,8 @@ func _process(delta):
 			B = to_local(B)
 	
 		var AB = B - A;
-		var orthogonalABStart = (to_local(camera.get_global_transform().origin) - ((A + B) / 2)).cross(AB).normalized() * thickness;
-		var orthogonalABEnd = (to_local(camera.get_global_transform().origin) - ((A + B) / 2)).cross(AB).normalized() * nextThickness;
+		var orthogonalABStart = (cameraOrigin - ((A + B) / 2)).cross(AB).normalized() * thickness;
+		var orthogonalABEnd = (cameraOrigin - ((A + B) / 2)).cross(AB).normalized() * nextThickness;
 		
 		var AtoABStart = A + orthogonalABStart
 		var AfromABStart = A - orthogonalABStart
@@ -50,7 +52,7 @@ func _process(delta):
 		
 		if i == 0:
 			if drawCaps:
-				corner(A, B, thickness, capSmooth)
+				cap(A, B, thickness, capSmooth)
 		
 		if scaleTexture:
 			var ABLen = AB.length()
@@ -85,10 +87,23 @@ func _process(delta):
 		
 		if i == points.size() - 2:
 			if drawCaps:
-				corner(B, A, nextThickness, capSmooth)
+				cap(B, A, nextThickness, capSmooth)
 		else:
 			if drawCorners:
-				corner(B, A, nextThickness, cornerSmooth)
+				var C = points[i+2]
+				if globalCoords:
+					C = to_local(C)
+				
+				var BC = C - B;
+				var orthogonalBCStart = (cameraOrigin - ((B + C) / 2)).cross(BC).normalized() * nextThickness;
+				var cameraNormal = B - cameraOrigin
+				
+				var angleDot = AB.dot(orthogonalBCStart)
+				
+				if angleDot > 0:
+					corner(B, BtoABEnd, B + orthogonalBCStart, cornerSmooth)
+				else:
+					corner(B, B - orthogonalBCStart, BfromABEnd, cornerSmooth)
 		
 		progress += progressStep;
 		thickness = lerp(startThickness, endThickness, progress);
@@ -96,9 +111,9 @@ func _process(delta):
 	
 	end()
 
-func corner(center, pivot, thickness, smoothing):
-	var orthogonal = (to_local(camera.get_global_transform().origin) - center).cross(center - pivot).normalized() * thickness;
-	var axis = (center - to_local(camera.get_global_transform().origin)).normalized();
+func cap(center, pivot, thickness, smoothing):
+	var orthogonal = (cameraOrigin - center).cross(center - pivot).normalized() * thickness;
+	var axis = (center - cameraOrigin).normalized();
 	
 	var array = []
 	for i in range(smoothing + 1):
@@ -110,11 +125,31 @@ func corner(center, pivot, thickness, smoothing):
 		array[i] = center + (orthogonal.rotated(axis, lerp(0, PI, float(i) / smoothing)));
 	
 	for i in range(1, smoothing + 1):
-		var currSmooth = (i - 1) / smoothing
-		
-		set_uv(Vector2(0, currSmooth))
+		set_uv(Vector2(0, (i - 1) / smoothing))
 		add_vertex(array[i - 1]);
-		set_uv(Vector2(0, currSmooth))
+		set_uv(Vector2(0, (i - 1) / smoothing))
+		add_vertex(array[i]);
+		set_uv(Vector2(0.5, 0.5))
+		add_vertex(center);
+		
+func corner(center, start, end, smoothing):
+	var array = []
+	for i in range(smoothing + 1):
+		array.append(Vector3(0,0,0))
+	array[0] = start;
+	array[smoothing] = end;
+	
+	var axis = start.cross(end).normalized()
+	var offset = start - center
+	var angle = offset.angle_to(end - center)
+	
+	for i in range(1, smoothing):
+		array[i] = center + offset.rotated(axis, lerp(0, angle, float(i) / smoothing));
+	
+	for i in range(1, smoothing + 1):
+		set_uv(Vector2(0, (i - 1) / smoothing))
+		add_vertex(array[i - 1]);
+		set_uv(Vector2(0, (i - 1) / smoothing))
 		add_vertex(array[i]);
 		set_uv(Vector2(0.5, 0.5))
 		add_vertex(center);
