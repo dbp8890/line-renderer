@@ -96,7 +96,6 @@ func _process(delta):
 				
 				var BC = C - B;
 				var orthogonalBCStart = (cameraOrigin - ((B + C) / 2)).cross(BC).normalized() * nextThickness;
-				var cameraNormal = B - cameraOrigin
 				
 				var angleDot = AB.dot(orthogonalBCStart)
 				
