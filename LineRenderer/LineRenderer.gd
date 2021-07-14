@@ -1,3 +1,4 @@
+tool
 extends ImmediateGeometry
 
 export var points = [Vector3(0,0,0),Vector3(0,5,0)]
@@ -20,7 +21,11 @@ func _process(delta):
 	if points.size() < 2:
 		return
 	
-	camera = get_viewport().get_camera()
+	if Engine.editor_hint:
+		camera = get_editor_camera()
+	else:
+		camera = get_viewport().get_camera()
+	
 	if camera == null:
 		return
 	cameraOrigin = to_local(camera.get_global_transform().origin)
@@ -109,6 +114,23 @@ func _process(delta):
 		nextThickness = lerp(startThickness, endThickness, progress + progressStep);
 	
 	end()
+
+func find_viewport_3d(node: Node, recursive_level):
+	if node.get_class() == "SpatialEditor":
+		return node.get_child(1).get_child(0).get_child(0).get_child(0).get_child(0).get_child(0)
+	else:
+		recursive_level += 1
+		if recursive_level > 15:
+			return null
+		for child in node.get_children():
+			var result = find_viewport_3d(child, recursive_level)
+			if result != null:
+				return result
+
+func get_editor_camera():
+	var editor_viewport_3d = find_viewport_3d(get_node("/root/EditorNode"), 0)
+	var editor_camera_3d = editor_viewport_3d.get_child(0)
+	return editor_camera_3d
 
 func cap(center, pivot, thickness, smoothing):
 	var orthogonal = (cameraOrigin - center).cross(center - pivot).normalized() * thickness;
